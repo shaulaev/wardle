@@ -14,18 +14,18 @@ const characterSchema = mongoose.Schema({
   //   artifacts: String /* Spear of Sanguinius */,
   //   armor: String /* No armor; Power Armour; Custodian Armour; Necrodermis(necrons)  */,
   status: String /* alive; dead; unknown; */,
-  fraction: String /* Imperium; Chaos; Orcs and etc. */,
+  faction: [{ type: String }] /* Imperium; Chaos; Orcs and etc. */,
   occupation: [
-    {
-      type: String,
-    },
+    { type: String },
   ] /* Job = Imperial Comissar or Chapter Master */,
   psyker:
-    Number /* 1 = psyker; 0 = not psyker; -1 = pariah(hollow, anti-psyker) */,
-  race: String /* Orc; Human; Eldar; Tau */,
-  age: Number /* 10000 years */,
-  sex: String,
+    String /* psyker; not psyker; pariah(hollow, anti-psyker) */,
+  race: [{ type: String }] /* Orc; Human; Eldar; Tau */,
+  age: String /* 10000 years */,
+  gender: String,
   created_at: String,
+  homeWorld: String,
+  lastSelected: { type: Date, default: null },
 });
 
 characterSchema.pre("save", function (next) {
