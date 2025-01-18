@@ -1,12 +1,41 @@
 const Character = require('../schemas/Character.model')
 const mongoose = require("mongoose");
+const compareFields = require('../classicGame/index') 
 
 module.exports.characterController = {
   getAllCharacters: async (req, res) => {
     try {
-      const allCharacters = await Character.find({});
+      const allCharacters = await Character.find(req.query);
 
       return res.status(200).json(allCharacters);
+    } catch (error) {
+      return res.status(500).json({
+        status: 500,
+        message: "Не удалось найти персонажа",
+        error,
+      });
+    }
+  },
+
+  getCharactersByMatchingName: async (req, res) => {
+    try {
+      const findedCharacters = await Character.find({ "name": { "$regex": req.params.name, "$options": "i" }});
+
+      return res.status(200).json(findedCharacters);
+    } catch (error) {
+      return res.status(500).json({
+        status: 500,
+        message: "Не удалось найти персонажа",
+        error,
+      });
+    }
+  },
+
+  getCharacterById: async (req, res) => {
+    try {
+      const findedCharacter = await Character.find({ id: req.params.id });
+
+      return res.status(200).json(findedCharacter);
     } catch (error) {
       return res.status(500).json({
         status: 500,
@@ -65,7 +94,10 @@ module.exports.characterController = {
 
   changeCharacter: async (req, res) => {
     try {
-      const character = await Character.findByIdAndUpdate(req.params.id, req.body);
+      const character = await Character.findByIdAndUpdate(
+        req.params.id,
+        req.body
+      );
 
       if (!character) {
         return res
@@ -142,8 +174,39 @@ module.exports.characterController = {
     }
   },
 
-  classicGameGuess: async(req, res) => {
-    const guessingName = req.body;
+  classicGameGuess: async (req, res) => {
+    const guessingName = req.body.name;
+
+    function AnswerFormer(obj) {
+      compareFields.forEach((item) => {
+        this[item] = obj[item];
+      });
+
+      return this;
+    }
+
+    function compareCharacters(firstChar, secondChar) {
+      const result = {};
+
+      compareFields.forEach((field) => {
+        if (Array.isArray(firstChar[field])) {
+          result[field] = firstChar[field].map((item, index) => {
+            return item === secondChar[field][index];
+          });
+        } else {
+          result[field] = firstChar[field] === secondChar[field];
+        }
+      });
+
+      return result;
+    }
+
+    const characterByName = await Character.findOne({ name: guessingName });
+    const correctCharacter = await Character.findOne({ correct: true });
+
+    if (characterByName.name === correctCharacter.name) {
+      return res.status(200).json(new AnswerFormer(correctCharacter));
+    }
 
     /*
       Поля для сравнения
@@ -157,6 +220,5 @@ module.exports.characterController = {
       homeWorld,
       age
     */
-    
-  }
+  },
 };
