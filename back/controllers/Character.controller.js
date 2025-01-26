@@ -1,6 +1,6 @@
-const Character = require('../schemas/Character.model')
+const Character = require("../schemas/Character.model");
 const mongoose = require("mongoose");
-const compareFields = require('../classicGame/index') 
+const compareFields = require("../classicGame/index");
 
 module.exports.characterController = {
   getAllCharacters: async (req, res) => {
@@ -19,7 +19,9 @@ module.exports.characterController = {
 
   getCharactersByMatchingName: async (req, res) => {
     try {
-      const findedCharacters = await Character.find({ "name": { "$regex": req.params.name, "$options": "i" }});
+      const findedCharacters = await Character.find({
+        name: { $regex: req.params.name, $options: "i" },
+      });
 
       return res.status(200).json(findedCharacters);
     } catch (error) {
@@ -33,7 +35,7 @@ module.exports.characterController = {
 
   getCharacterById: async (req, res) => {
     try {
-      const findedCharacter = await Character.find({ id: req.params.id });
+      const findedCharacter = await Character.findById(req.params.id);
 
       return res.status(200).json(findedCharacter);
     } catch (error) {
@@ -162,6 +164,7 @@ module.exports.characterController = {
       if (randomCharacter) {
         // Обновляем дату последнего выбора персонажа
         randomCharacter.lastSelected = now;
+        randomCharacter.selected = true;
         await randomCharacter.save();
 
         res.json(randomCharacter);
@@ -176,6 +179,9 @@ module.exports.characterController = {
 
   classicGameGuess: async (req, res) => {
     const guessingName = req.body.name;
+
+    if(!guessingName) return res
+      .status(304).json('Нужно ввести имя')
 
     function AnswerFormer(obj) {
       compareFields.forEach((item) => {
@@ -202,10 +208,23 @@ module.exports.characterController = {
     }
 
     const characterByName = await Character.findOne({ name: guessingName });
-    const correctCharacter = await Character.findOne({ correct: true });
+    const correctCharacter = await Character.findOne({ selected: true });
+
+    if (!characterByName) return res.status(304).json("Персонаж с таким именем не найден");
+    if (!correctCharacter)
+      return res.status(304).json("Персонаж для игры пока не выбран");
+
 
     if (characterByName.name === correctCharacter.name) {
-      return res.status(200).json(new AnswerFormer(correctCharacter));
+      return res
+        .status(200)
+        .json(
+          new AnswerFormer(compareCharacters(characterByName, correctCharacter))
+        );
+    } else {
+      return res
+        .status(200)
+        .json(new AnswerFormer(compareCharacters(characterByName, correctCharacter)))
     }
 
     /*
