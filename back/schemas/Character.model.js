@@ -25,6 +25,10 @@ const characterSchema = mongoose.Schema({
   gender: String,
   created_at: String,
   homeWorld: String,
+  selected: {
+    type: Boolean,
+    default: false
+  },
   lastSelected: { type: Date, default: null },
 });
 
